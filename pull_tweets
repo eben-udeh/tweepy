@@ -1,0 +1,49 @@
+#initially written by alexdeloy, slightly modified by Eben Udeh 1/23/23
+
+import tweepy
+import datetime
+import xlsxwriter
+import sys
+
+
+
+# credentials from https://apps.twitter.com/
+consumerKey = "API Key"
+consumerSecret = "API key Secret"
+accessToken = "Access Token"
+accessTokenSecret = "Access Token Secret"
+
+auth = tweepy.OAuthHandler(consumerKey, consumerSecret)
+auth.set_access_token(accessToken, accessTokenSecret)
+
+api = tweepy.API(auth)
+
+username = ""
+startDate = datetime.datetime(2018, 6, 1, 0, 0, 0) #June 2018
+endDate =   datetime.datetime(2019, 3, 1, 0, 0, 0) #march 2019
+
+tweets = []
+tmpTweets = api.user_timeline(screen_name=username, tweet_mode='extended')
+for tweet in tmpTweets:
+    if tweet.created_at < endDate and tweet.created_at > startDate:
+        tweets.append(tweet)
+
+while (tmpTweets[-1].created_at > startDate):
+    print("Last Tweet @", tmpTweets[-1].created_at, " - fetching some more")
+    tmpTweets = api.user_timeline("Atiku Abubakar")
+    for tweet in tmpTweets:
+        if tweet.created_at < endDate and tweet.created_at > startDate:
+            tweets.append(tweet)
+
+workbook = xlsxwriter.Workbook(username + ".xlsx")
+worksheet = workbook.add_worksheet()
+row = 0
+for tweet in tweets:
+    worksheet.write_string(row, 0, str(tweet.id))
+    worksheet.write_string(row, 1, str(tweet.created_at))
+    worksheet.write(row, 2, tweet.text)
+    worksheet.write_string(row, 3, str(tweet.in_reply_to_status_id))
+    row += 1
+
+workbook.close()
+print("Finished with no errors")
